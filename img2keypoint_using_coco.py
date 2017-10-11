@@ -338,6 +338,7 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,debug =
         canvas = oriImg
         img_ori = canvas.copy()
     output_path = output_json_prefix +  os.path.splitext(os.path.basename(img_path))[0] + ".json"
+    print("candidate:",len(candidate))
     with open(output_path,"wb") as f_json:
         r_all_person = {}
         r_all_person['path'] = img_path
@@ -345,12 +346,12 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,debug =
             r_oneperson = []
             for i in range(19):    
                 index_head = subset[n][i]        
-                # if -1 in index_head:
-                #     continue
-                x = int(candidate[index_head.astype(int),0])
-                y = int(candidate[index_head.astype(int),1])
+                try:
+                    x = int(candidate[index_head.astype(int),0])
+                    y = int(candidate[index_head.astype(int),1])
+                except IndexError:
+                    x =0;y=0
                 coo = (x,y)
-                print("[info]:coo",coo)
                 if debug:
                     cv2.circle(img_ori,coo,12,colors[n],thickness = 3)
                 r_oneperson += coo
@@ -362,7 +363,80 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,debug =
         cv2.imshow("img_ori",img_ori)
         cv2.waitKey(0)
 
- 
+part_text = {
+    0:("top head",13),#13 //nose
+    1:("neck",14), #14
+    2:("right shoulder",1),#1
+    3:("right elbow",2), #2
+    4:("right wrist",3), #3
+    5:("left shoulder",4), #4
+    6:("left elbow",5), #5
+    7:("left wrist",6), #6
+    8:("right hip",7), #7
+    9:("right knee",8), #8
+    10:("right ankle",9), #9
+    11:("left hip",10),#10
+    12:("left knee",11),#11
+    13:("left ankle",12),#12
+    
+    14:("right eye",13),#*
+    15:("left eye",13),
+    16:("right ear",13),
+    17:("left ear",13),
+}
+def showjson(json_path):
+    import json,cv2
+    try:
+        ob = json.load(open(json_path,"rb"))
+    except:
+        print("warning",json_path)
+        return
+    img = cv2.imread(ob['path'])
+    for key in ob.keys():
+        if isinstance(ob[key],list) and len(ob[key]) == 38:
+            for i in range(19):
+                f_scale = 1.0/ max_img_shape[0] *max(img.shape[0],img.shape[1])
+                x = int(ob[key][i * 2] * f_scale)
+                y = int(ob[key][i * 2 + 1] * f_scale)
+                cv2.circle(img,(x,y),3,(255,85,0))
+                cv2.putText(img, str(i), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255))               
+                print(x,y)
+    cv2.imshow("test",img)
+    key = cv2.waitKey(0)
+    if key == 27:
+        exit(0)
+def parseOneJson(json_path):
+    import json,cv2
+    r_dict = {}
+
+    try:
+        ob = json.load(open(json_path,"rb"))
+    except ValueError:
+        print("warning", "invalid json file",json_path)
+        return r_dict
+    r_dict['image_id'] = os.path.splitext(os.path.basename(ob['path']))[0]
+
+    img = cv2.imread(ob['path'])    
+    keypoint_annotations = {}
+    for key in ob.keys():
+        if isinstance(ob[key],list) and len(ob[key]) == 38:
+            keypoint = [0] * 42
+            for i in range(14):
+                f_scale = 1.0/ max_img_shape[0] *max(img.shape[0],img.shape[1])
+                x = int(ob[key][i * 2] * f_scale)
+                y = int(ob[key][i * 2 + 1] * f_scale)
+                v = 1
+                map_index =part_text[i][1]-1
+                if x > img.shape[0] and y > img.shape[1] :
+                    x = 0
+                    y = 0
+                    v = 0
+                keypoint[map_index *3 + 0] = x
+                keypoint[map_index *3 + 1] = y
+                keypoint[map_index *3 + 2] = v                                
+            keypoint_annotations['human{0}'.format(i)] = keypoint
+    r_dict['keypoint_annotations'] = keypoint_annotations
+    return r_dict
 if __name__ == "__main__":
     import multiprocessing,argparse
     from multiprocessing import Queue
@@ -384,7 +458,8 @@ if __name__ == "__main__":
             path = os.path.join(x,name)
             img_path,oriImg,heatma_av,pafs_av = getHeatAndPAF(path,models)
             print("shapes",oriImg.shape,heatma_av.shape,pafs_av.shape)
-            pool.apply_async(parse_heatpaf, (img_path,oriImg,heatma_av,pafs_av,args.json_dir))
+            parse_heatpaf(img_path,oriImg,heatma_av,pafs_av,args.json_dir,True)
+            # pool.apply_async(parse_heatpaf, (img_path,oriImg,heatma_av,pafs_av,args.json_dir))
     pool.close()
     pool.join()
     # models = getModel(imgshape_bind)

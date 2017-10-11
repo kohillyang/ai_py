@@ -16,6 +16,30 @@ import PIL.Image
 import math
 import time
 import matplotlib
+
+
+
+part_text = {
+    0:("top head",13),#13
+    1:("neck",14), #14
+    2:("right shoulder",1),#1
+    3:("right elbow",2), #2
+    4:("right wrist",3), #3
+    5:("left shoulder",4), #4
+    6:("left elbow",5), #5
+    7:("left wrist",6), #6
+    8:("right hip",7), #7
+    9:("right knee",8), #8
+    10:("right ankle",9), #9
+    11:("left hip",10),#10
+    12:("left knee",11),#11
+    13:("left ankle",12),#12
+    14:("tummy"),#*
+}
+
+
+
+
 debug = True
 # %matplotlib inline
 import pylab as plt

@@ -45,10 +45,9 @@ def padimg(img,destsize):
         sd = img_d.shape
         img_temp[0:sd[0],0:sd[1],0:sd[2]]=img_d
     return img_temp
-def getModel(imgshape_for_bind):
+def getModel(imgshape_for_bind,gpus = [1,2,5,7]):
     output_prefix='../models/openpose/realtimePose'
     sym, arg_params, aux_params = mx.model.load_checkpoint(output_prefix, 0)
-    gpus = [1,2,5,7]
     cmodels = []
     for i in range(len(search_ratio)):
         ctx = mx.gpu(gpus[i])
@@ -113,25 +112,28 @@ class HeatPafCalculator(object):
  
 if __name__ == "__main__":
     import multiprocessing,argparse
-    from multiprocessing import Queue
     from img2keypoint_using_coco import parse_heatpaf
 
-    processes_num = 16
+    processes_num = 36  
+    calculator_batch = 30
 
+    gpus_list =[
+        [1,2,5,7],
+        [7,5,2,1],
+    ] * calculator_batch
+    
     pool = multiprocessing.Pool(processes = processes_num)
 
     testpath = "/data1/yks/dataset/ai_challenger/ai_challenger_keypoint_validation_20170911/keypoint_validation_images_20170911"
     testjsonpath = "/tmp/"
 
-    queue = Queue()    
     parser = argparse.ArgumentParser()
     parser.add_argument("--images_dir","-i", help="input images dir ",type = str,default = testpath)
     parser.add_argument("--json_dir","-o", help="output json dir ",type = str,default = testjsonpath)
     args = parser.parse_args()
-    calculator_batch = 6
     calculators =[]
-    for _ in range(calculator_batch):
-        models = getModel(imgshape_bind)
+    for i in range(calculator_batch):
+        models = getModel(imgshape_bind,gpus_list[i])
         calculators.append(HeatPafCalculator(models))
     img_pathes = []
     for x,y,z in os.walk(args.images_dir):
@@ -139,7 +141,7 @@ if __name__ == "__main__":
             img_pathes.append(os.path.join(x,name))
     assert len(img_pathes) % calculator_batch == 0
     steps = int(len(img_pathes)/calculator_batch)
-    steps = 2
+#     steps = 20
     for index in range(steps):
         for i in range(calculator_batch):
             calculators[i].begin_calc(img_pathes[index * calculator_batch + i])
