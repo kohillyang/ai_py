@@ -384,6 +384,7 @@ if __name__ == "__main__":
         for name in z:
             path = os.path.join(x,name)
             img_path,oriImg,heatma_av,pafs_av = getHeatAndPAF(path,models)
+
             pool.apply_async(parse_heatpaf, (img_path,oriImg,heatma_av,pafs_av,args.json_dir))
     pool.close()
     pool.join()

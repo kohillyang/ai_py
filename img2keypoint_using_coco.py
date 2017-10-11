@@ -102,7 +102,7 @@ def getHeatAndPAF(img_path,models):
     pool.close()
     pool.join()
     return img_path,oriImg,heatmap_avg,paf_avg
-def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix):
+def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,debug = False):
     
 
     '''
