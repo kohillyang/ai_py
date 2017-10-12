@@ -7,3 +7,14 @@ mxnet_Realtime_Multi-Person_Pose_Estimation
 outputs
 cudamat
 .*
+mxnet_pose_for_AI_challenger/pose_io/AI_data_val.json
+mxnet_pose_for_AI_challenger/test_generatelabel.ipynb
+ai_openpose/__init__.py
+ai_openpose/myApp.log
+ai_openpose/tmp.db
+ai_openpose/tmp2.db
+__init__.py
+ai_openpose/tmp2.db-journal
+.settings
+.settings/org.eclipse.core.resources.prefs
+mxnet_pose_for_AI_challenger

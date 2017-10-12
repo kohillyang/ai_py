@@ -1,3 +1,4 @@
+#!/usr/bin/python2
 import cv2,json
 import sys
 import argparse

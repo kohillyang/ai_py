@@ -71,7 +71,9 @@ class HeatPafCalculator(object):
             r.append(imgs_batch)
         return r
     def suffix_heatmap(self,heatmap,size):
+        print(heatmap.shape)
         heatmap = np.moveaxis(heatmap.asnumpy()[0], 0, -1)
+        print(heatmap.shape)
         heatmap = cv.resize(heatmap, (size[0], size[1]), interpolation=cv.INTER_CUBIC)            
         return heatmap
     def suffix_paf(self,paf,size):
@@ -114,8 +116,8 @@ if __name__ == "__main__":
     import multiprocessing,argparse
     from img2keypoint_using_coco import parse_heatpaf
 
-    processes_num = 36  
-    calculator_batch = 30
+    processes_num = 1
+    calculator_batch = 1
 
     gpus_list =[
         [1,2,5,7],

@@ -1,3 +1,6 @@
 eclipse.preferences.version=1
+encoding//ai_openpose/showdataset.py=utf-8
+encoding//ai_openpose/train.py=utf-8
+encoding//mxnet_pose_for_AI_challenger/__init__.py=utf-8
 encoding/img2keypoint_using_coco.py=utf-8
 encoding/img2keypoint_using_coco_parallel.py=utf-8

@@ -431,11 +431,25 @@ def parseOneJson(json_path):
                     x = 0
                     y = 0
                     v = 0
+                if x==0 and y== 0:
+                    x = 0
+                    y = 0
+                    v = 0
                 keypoint[map_index *3 + 0] = x
                 keypoint[map_index *3 + 1] = y
                 keypoint[map_index *3 + 2] = v                                
+
+            topheadx = 0
+            topheady = 0
+            ac = 0
+            for i in range(14,18,1):
+                x = int(ob[key][i * 2] * f_scale)
+                y = int(ob[key][i * 2 + 1] * f_scale)
+                v = 1
+            
             keypoint_annotations['human{0}'.format(i)] = keypoint
     r_dict['keypoint_annotations'] = keypoint_annotations
+
     return r_dict
 if __name__ == "__main__":
     import multiprocessing,argparse
