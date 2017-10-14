@@ -18,3 +18,12 @@ ai_openpose/tmp2.db-journal
 .settings
 .settings/org.eclipse.core.resources.prefs
 mxnet_pose_for_AI_challenger
+.settings/org.eclipse.core.resources.prefs
+
+*.ipynb
+
+*.db
+
+*.pdf
+
+*.gv

@@ -178,8 +178,8 @@ class Logger():
         if loggername not in cls.__name2logger:
             cls._acquire_lock()    # lock current thread
             if loggername not in cls.__name2logger:
-                log_obj = object.__new__(cls)
-                cls.__init__(log_obj, **kwargs)
+                log_obj = logging.getLogger(loggername)
+                # cls.__init__(log_obj, **kwargs)
                 cls.__name2logger[loggername] = log_obj
             cls._release_lock()    # release lock
         return cls.__name2logger[loggername]

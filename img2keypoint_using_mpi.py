@@ -38,6 +38,10 @@ part_text = {
 }
 
 
+part_affinity = {
+    
+}
+
 
 
 debug = True
