@@ -15,8 +15,24 @@ sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
 from generateLabelCPMWeight import getImageandLabel
 
 import numpy as np
-heatmap_index_map = [5,6,7,2,3,4,11,12,13,8,9,10,0,1,14]#14 means mean of all part
+heatmap_index_map = [[12],[13],[0,3],[1,4],[2,5],[6,9],[7,10],[8,11],[14]]#14 means mean of all part
 pafmap_index_map =  [0,4,1,5,6,2,3,7,12,9,8,11,10]
+'''
+13 脖子
+12 头顶 
+11 右脚
+10 右膝
+9 右髋
+8 左脚
+7 左膝
+6 左髋
+5 右腕
+4 右肘
+3 右肩
+2 左腕
+1 左肘
+0 左肩
+'''
 
 '''
 0: 头顶-脖子  0
@@ -36,22 +52,6 @@ pafmap_index_map =  [0,4,1,5,6,2,3,7,12,9,8,11,10]
 '''
 
 
-'''
-13 脖子
-12 头顶 
-11 右脚
-10 右膝
-9 右髋
-8 左脚
-7 左膝
-6 左髋
-5 右腕
-4 右肘
-3 右肩
-2 左腕
-1 左肘
-0 左肩
-'''
 
 
 
@@ -73,16 +73,16 @@ class Ai_data_set(object):
     
         print>>sys.stderr,len(heatmap),len(pagmap)
     
-        # for i in range(heatmap.shape[0]):
-        #     heatmap_x = cv2.resize(heatmap[i],(image.shape[0],image.shape[1]),cv2.INTER_CUBIC)
-        #     heat_c = copy.copy(heat)
-        #     heat_c[:,:,2] = 1 * heat_c[:,:,2] + heatmap_x * 5        
-        #     heat_c[:,:,2] /= np.max(heat_c[:,:,2])
-        #     windowname = "heat_c{0}".format(i)
-        #     cv2.imshow(windowname,heat_c)
-        #     if cv2.waitKey(0) == 27:
-        #         sys.exit(0)
-        #     cv2.destroyWindow(windowname)
+        for i in range(heatmap.shape[0]):
+            heatmap_x = cv2.resize(heatmap[i],(image.shape[0],image.shape[1]),cv2.INTER_CUBIC)
+            heat_c = copy.copy(heat)
+            heat_c[:,:,2] = 1 * heat_c[:,:,2] + heatmap_x * 5        
+            heat_c[:,:,2] /= np.max(heat_c[:,:,2])
+            windowname = "heat_c{0}".format(i)
+            cv2.imshow(windowname,heat_c)
+            if cv2.waitKey(0) == 27:
+                sys.exit(0)
+            cv2.destroyWindow(windowname)
         for i in range(pagmap.shape[0]/2):
             print(heatmap.shape)
             print(type(pagmap[i * 2]))
@@ -146,13 +146,21 @@ class Ai_data_set(object):
             r.append(pickle.loads(str(data)))            
             image, mask, heatmap, pagmap = pickle.loads(str(data))
 
-            heatmap_new = [None] * len(heatmap)
+            heatmap_new = np.empty(shape = (len(heatmap_index_map),heatmap[0].shape[0],heatmap[0].shape[1]),dtype=np.float32)
             pagmap_new = np.empty_like(pagmap,dtype=np.float32)
-            assert len(heatmap_index_map) == len(heatmap)
             for i in range(len(heatmap_index_map)):
-                heatmap_new[heatmap_index_map[i]] = heatmap[i]
+                t_new = np.zeros_like(heatmap[i])
+                for j in heatmap_index_map[i]:
+                    m = np.max(heatmap[j])
+                    if m > 0.0000001:
+                        t_new += heatmap[j] / m
+                    else:
+                        t_new += heatmap[j] 
+                m = np.max(t_new)
+                if m > 0.00001:
+                    t_new /= m
+                heatmap_new[i] = t_new
 
-            # print int(len(pagmap)/2),len(pafmap_index_map)
             assert int(len(pagmap)/2) == len(pafmap_index_map)
 
             for i in range(len(pafmap_index_map)):

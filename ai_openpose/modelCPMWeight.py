@@ -6,7 +6,7 @@ from google.protobuf import text_format
 import mxnet as mx
 from generateLabelCPMWeight import *
 
-numofparts = 15
+numofparts = 9
 numoflinks = 13
 
 def CPMModel():

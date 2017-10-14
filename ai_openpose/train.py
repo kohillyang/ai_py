@@ -10,11 +10,9 @@ from showdataset import Ai_data_set
 import mxnet as mx
 import numpy as np
 sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
-from modelCPMWeight import CPMModel
-numofparts = 15
-numoflinks = 13
+from modelCPMWeight import CPMModel,numofparts,numoflinks
 save_prefix  = "../outputs/models/yks_pose"
-def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [1]):
+def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [1,2,3,4]):
     if re_init:
         from train_config import vggparams,params_realtimePose_layers
         vgg19_prefix = "/data1/yks/models/vgg19/vgg19"
@@ -29,12 +27,11 @@ def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = 
             newargs[key_weight] = arg_mpi[key_weight]
             newargs[key_bias] = arg_mpi[key_bias]
 
-        # for key in vggparams:
-        #     newargs[key] = arg_vgg[key]
+        for key in vggparams:
+            newargs[key] = arg_vgg[key]
         sym = CPMModel()
     else:
         sym, newargs, _ = mx.model.load_checkpoint(prefix, begin_epoch)
-    mx.viz.plot_network(sym).view()
         
     model = mx.mod.Module(symbol=sym, context=[mx.gpu(x) for x in gpus],
                         label_names=['heatmaplabel',
@@ -51,7 +48,7 @@ def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = 
 
     return model
 def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_train_count = 4):
-    cmodel.init_optimizer(optimizer='sgd', optimizer_params=(('learning_rate', 0.000004 ), ))         
+    cmodel.init_optimizer(optimizer='sgd', optimizer_params=(('learning_rate', 1e-7 ), ))         
     for nbatch,data_batch in enumerate(train_data):
         current_batch = begin_epoch + nbatch 
         if current_batch >= end_epoch:
@@ -126,7 +123,7 @@ def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_
 if __name__ == "__main__":
 
     start_epoch = 0
-    batch_size = 1
+    batch_size = 32
     cpm_model = getModule(save_prefix,start_epoch,batch_size,True)
     train_data = Ai_data_set(batch_size)
     train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,4)
