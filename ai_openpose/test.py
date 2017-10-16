@@ -76,7 +76,7 @@ def getModel(prefix,epoch,gpus = [0]):
     model.init_params(arg_params=newargs, aux_params={}, allow_missing=False)
     return model
 def test(imgs_path):
-    cmodel = getModel(save_prefix,2600)
+    cmodel = getModel(save_prefix,400)
     for x,y,z in os.walk(imgs_path):
         for name in z:
             path = os.path.join(x,name)
@@ -94,6 +94,9 @@ def test(imgs_path):
                 cv2.imshow("heatmap_avg",heat_c)
                 cv2.imshow("paf_avg",paf_avg[:,:,1].astype(np.float32) * 128)
                 cv2.imshow("oriImg",oriImg)
+                if cv2.waitKey(0) == 27:
+                    sys.exit(0)
+
             i = 12
             pagmap_x = cv2.resize(paf_avg[:,:,i * 2],(oriImg.shape[0],oriImg.shape[1]),cv2.INTER_CUBIC)
             pagmap_y = cv2.resize(paf_avg[:,:,i * 2 + 1],(oriImg.shape[0],oriImg.shape[1]),cv2.INTER_CUBIC)

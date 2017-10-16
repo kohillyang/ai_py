@@ -15,6 +15,10 @@ sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
 from generateLabelCPMWeight import getImageandLabel
 
 import numpy as np
+from modelCPMWeight import numoflinks
+import modelCPMWeight
+numofparts = modelCPMWeight.numofparts -1 
+
 heatmap_index_map = [[12],[13],[0,3],[1,4],[2,5],[6,9],[7,10],[8,11],[14]]#14 means mean of all part
 pafmap_index_map =  [0,4,1,5,6,2,3,7,12,9,8,11,10]
 '''
@@ -121,7 +125,7 @@ class Ai_data_set(object):
                 conn.commit()  
             if (count > maxcount):
                 return
-    def __init__(self,batchsize,dbname = "ai_train_40000.db"):
+    def __init__(self,batchsize,dbname ):
         self.dbname = dbname
         self.batchsize = batchsize
         self.conn = sqlite3.connect(self.dbname)
@@ -146,35 +150,36 @@ class Ai_data_set(object):
             r.append(pickle.loads(str(data)))            
             image, mask, heatmap, pagmap = pickle.loads(str(data))
 
-            heatmap_new = np.empty(shape = (len(heatmap_index_map),heatmap[0].shape[0],heatmap[0].shape[1]),dtype=np.float32)
-            pagmap_new = np.empty_like(pagmap,dtype=np.float32)
-            for i in range(len(heatmap_index_map)):
-                t_new = np.zeros_like(heatmap[i])
-                for j in heatmap_index_map[i]:
-                    m = np.max(heatmap[j])
-                    if m > 0.0000001:
-                        t_new += heatmap[j] / m
-                    else:
-                        t_new += heatmap[j] 
-                m = np.max(t_new)
-                if m > 0.00001:
-                    t_new /= m
-                heatmap_new[i] = t_new
+            # heatmap_new = np.empty(shape = (len(heatmap_index_map),heatmap[0].shape[0],heatmap[0].shape[1]),dtype=np.float32)
+            # pagmap_new = np.empty_like(pagmap,dtype=np.float32)
+            # for i in range(len(heatmap_index_map)):
+            #     t_new = np.zeros_like(heatmap[i])
+            #     for j in heatmap_index_map[i]:
+            #         m = np.max(heatmap[j])
+            #         if m > 0.0000001:
+            #             t_new += heatmap[j] / m
+            #         else:
+            #             t_new += heatmap[j] 
+            #     m = np.max(t_new)
+            #     if m > 0.00001:
+            #         t_new /= m
+            #     heatmap_new[i] = t_new
 
-            assert int(len(pagmap)/2) == len(pafmap_index_map)
+            # assert int(len(pagmap)/2) == len(pafmap_index_map)
 
-            for i in range(len(pafmap_index_map)):
-                pagmap_new[pafmap_index_map[i] * 2  + 0] = pagmap[i * 2 + 0]
-                pagmap_new[pafmap_index_map[i] * 2  + 1] = pagmap[i * 2 + 1]
+            # for i in range(len(pafmap_index_map)):
+            #     pagmap_new[pafmap_index_map[i] * 2  + 0] = pagmap[i * 2 + 0]
+            #     pagmap_new[pafmap_index_map[i] * 2  + 1] = pagmap[i * 2 + 1]
 
             # assert(np.abs( np.sum(pagmap_new) - np.sum(pagmap)) < 0.001)
             # assert(np.abs(np.sum(heatmap_new) - np.sum(heatmap))< 0.001) 
 
 
-            heatmap = heatmap_new
-            pagmap = pagmap_new
-            maskscale = mask[0:368:8, 0:368:8, 0]
-           
+            # heatmap = heatmap_new
+            # pagmap = pagmap_new
+            # maskscale = mask[0:368:8, 0:368:8, 0]
+
+            maskscale = mask[0:368:8, 0:368:8]           
             heatweight = np.repeat(maskscale[np.newaxis, :, :], len(heatmap), axis=0)
             vecweight  = np.repeat(maskscale[np.newaxis, :, :], len(pagmap), axis=0)
             
@@ -201,7 +206,7 @@ class Ai_data_set(object):
 if __name__ == "__main__":
     pose_io_json_path = os.path.join(selfpathdir,"../mxnet_pose_for_AI_challenger/pose_io/AI_data_val.json")
     # Ai_data_set.convertdataset2sqlite(pose_io_json_path)
-    d = Ai_data_set(10)
+    d = Ai_data_set(10,dbname = "mpi_1000.db")
     for da in d:
         images,heatmaplabels, partaffinityglabels, _,_ = da.data + da.label
         for image,heatmap,pafmap in zip(images,heatmaplabels,partaffinityglabels):
