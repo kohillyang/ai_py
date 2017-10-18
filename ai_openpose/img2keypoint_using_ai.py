@@ -17,37 +17,11 @@ import PIL.Image
 
 from train import numoflinks,numofparts,save_prefix
 
-part_text = {
-    0:("top head",13),#13
-    1:("neck",14), #14
-    2:("right shoulder",1),#1
-    3:("right elbow",2), #2
-    4:("right wrist",3), #3
-    5:("left shoulder",4), #4
-    6:("left elbow",5), #5
-    7:("left wrist",6), #6
-    8:("right hip",7), #7
-    9:("right knee",8), #8
-    10:("right ankle",9), #9
-    11:("left hip",10),#10
-    12:("left knee",11),#11
-    13:("left ankle",12),#12
-    14:("tummy"),#*
-}
-
-
-part_affinity = {
-    
-}
-
 
 
 debug = False
 # %matplotlib inline
 import pylab as plt
-#from generateLabelCPM import *
-#from modelCPM import *
-#sym = mxnetModule()
 
 def showjson(json_path):
     import json,cv2
@@ -146,7 +120,6 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
 
 
     import scipy
-    print heatmap_avg.shape
 
     #plt.imshow(heatmap_avg[:,:,2])
     from scipy.ndimage.filters import gaussian_filter
@@ -262,8 +235,6 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
     subset = -1 * np.ones((0, 20))
 
     candidate = np.array([item for sublist in all_peaks for item in sublist])
-    print len(candidate)
-    candidate
 
 
     for k in range(len(mapIdx)):
@@ -375,7 +346,7 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
         im_show_cb("result",img_ori)
 
 
-def main(isdebug = False):
+def main(isdebug = False,start_epoch = 5900):
     debug = isdebug
     use_mpi_model = False
     import sys,cv2,os,argparse,copy
@@ -385,7 +356,6 @@ def main(isdebug = False):
     from modelCPMWeight import CPMModel_test
     if not use_mpi_model:
         from train import numoflinks,numofparts,save_prefix
-        start_epoch = 5250
     else:
         save_prefix = "../../models/openpose/realtimePose_mpi"
         start_epoch=0
@@ -400,9 +370,7 @@ def main(isdebug = False):
     max_img_shape = (368 ,368)
     imgshape_bind = (max_img_shape,)
     def padimg(img,destsize):
-        s = img.shape
-        print img.shape,destsize/s[1],destsize/s[1]
-    
+        s = img.shape    
         if(s[0] > s[1]):
             img_d = cv2.resize(img,dsize = None,fx = 1.0 * destsize/s[0], fy = 1.0 * destsize/s[0])
             img_temp = np.ones(shape = (destsize,destsize,3),dtype=np.uint8) * 128
@@ -472,7 +440,6 @@ def main(isdebug = False):
     for x,y,z in os.walk("../../eval_dataset/images/"):
         for name in z:
             img_path = os.path.join(x,name)
-            pprint(img_path)
             img_path,oriImg,heatmap_avg,paf_avg = getHeatAndPAF(img_path,[cmodel])
 #             imshow("heatmap_avg",np.float32( heatmap_avg[:,:,14]))
 #             imshow("oriImg",oriImg)
