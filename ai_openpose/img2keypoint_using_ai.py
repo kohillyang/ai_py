@@ -11,8 +11,8 @@ import cv2
 import numpy as np
 import scipy
 import PIL.Image
-sys.path.append("pysrc")
-import pydevd
+# sys.path.append("pysrc")
+# import pydevd
 
 
 from train import numoflinks,numofparts,save_prefix
@@ -42,22 +42,40 @@ part_affinity = {
 
 
 
-debug = True
+debug = False
 # %matplotlib inline
 import pylab as plt
 #from generateLabelCPM import *
 #from modelCPM import *
 #sym = mxnetModule()
 
-
-search_ratio = [0.5,1,1.5,2]
+def showjson(json_path):
+    import json,cv2
+    try:
+        ob = json.load(open(json_path,"rb"))
+    except:
+        print("warning",json_path)
+        return
+    img = cv2.imread(ob['path'])
+    for key in ob.keys():
+        if isinstance(ob[key],list) and len(ob[key]) == 30:
+            for i in range(14):
+                f_scale = 1.0/ max_img_shape[0] *max(img.shape[0],img.shape[1])
+                x = int(ob[key][i * 2] * f_scale)
+                y = int(ob[key][i * 2 + 1] * f_scale)
+                cv2.circle(img,(x,y),3,(255,85,0))
+                cv2.putText(img, str(i), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,255))               
+                print(x,y)
+    cv2.imshow("test",img)
+    key = cv2.waitKey(0)
+    if key == 27:
+        exit(0)
+search_ratio = [1]
 imgshape_bind = [(int(368*x),int(368*x)) for x in search_ratio]
 max_img_shape = (max(search_ratio)*368,max(search_ratio)*368)
 import json
 def padimg(img,destsize):
     s = img.shape
-    print img.shape,destsize/s[1],destsize/s[1]
-
     if(s[0] > s[1]):
         img_d = cv2.resize(img,dsize = None,fx = 1.0 * destsize/s[0], fy = 1.0 * destsize/s[0])
         img_temp = np.ones(shape = (destsize,destsize,3),dtype=np.uint8) * 128
@@ -69,7 +87,43 @@ def padimg(img,destsize):
         sd = img_d.shape
         img_temp[0:sd[0],0:sd[1],0:sd[2]]=img_d
     return img_temp
+def parseOneJson(json_path):
+    import json,cv2
+    r_dict = {}
 
+    try:
+        ob = json.load(open(json_path,"rb"))
+    except ValueError:
+        print("warning", "invalid json file",json_path)
+        return r_dict
+    r_dict['image_id'] = os.path.splitext(os.path.basename(ob['path']))[0]
+
+    img = cv2.imread(ob['path'])    
+    keypoint_annotations = {}
+    for key in ob.keys():
+        if isinstance(ob[key],list) and len(ob[key]) == (2 * (numofparts-1)):
+            keypoint = [0] * 42
+            for i in range(numofparts-1):
+                f_scale = 1.0/ max_img_shape[0] *max(img.shape[0],img.shape[1])
+                x = int(ob[key][i * 2] * f_scale)
+                y = int(ob[key][i * 2 + 1] * f_scale)
+                v = 1
+                map_index = i 
+                if x > img.shape[0] and y > img.shape[1] :
+                    x = 0
+                    y = 0
+                    v = 0
+                if x==0 and y== 0:
+                    x = 0
+                    y = 0
+                    v = 0
+                keypoint[map_index *3 + 0] = x
+                keypoint[map_index *3 + 1] = y
+                keypoint[map_index *3 + 2] = v                                            
+            keypoint_annotations['human{0}'.format(i)] = keypoint
+    r_dict['keypoint_annotations'] = keypoint_annotations
+
+    return r_dict
 def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show_cb=cv2.imshow):
     
 
@@ -85,19 +139,11 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
 
         
     param={}
-    param['octave'] = 3
-    param['use_gpu'] = 1
-    param['starting_range'] = 0.8
-    param['ending_range'] = 2
-    param['scale_search'] = [0.5, 1, 1.5, 2]
-    param['thre1'] = 0.1
+ 
+    param['thre1'] = 0.2
     param['thre2'] = 0.1
-    param['thre3'] = 0.5
-    param['mid_num'] = 4
-    param['min_num'] = 10
-    param['crop_ratio'] = 2.5
-    param['bbox_ratio'] = 0.25
-    param['GPUdeviceNumber'] = 3
+    param['mid_num'] = 7
+
 
     import scipy
     print heatmap_avg.shape
@@ -141,8 +187,9 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
     connection_all = []
     special_k = []
     special_non_zero_index = []
-    mid_num = 11
-    pydevd.settrace("115.154.62.162", True, True, 5678, True) 
+    mid_num = param['mid_num'] 
+    if debug:
+        pydevd.settrace("115.154.62.162", True, True, 5678, True) 
     for k in range(len(mapIdx)):
         score_mid = paf_avg[:,:,[x for x in mapIdx[k]]]
         candA = all_peaks[limbSeq[k][0]-1]
@@ -310,25 +357,26 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
         r_all_person['path'] = img_path
         for n in range(len(subset)):
             r_oneperson = []
-            for i in range(numofparts):    
+            for i in range(numofparts - 1):    
                 index_head = subset[n][i]        
                 # if -1 in index_head:
                 #     continue
                 x = int(candidate[index_head.astype(int),0])
                 y = int(candidate[index_head.astype(int),1])
                 coo = (x,y)
-                print("[info]:coo",coo)
                 if debug:
                     cv2.circle(img_ori,coo,3,colors[n],thickness = 3,)
                 r_oneperson += coo
             r_all_person['human{0}'.format(n)]=r_oneperson           
         json.dump(r_all_person,f_json)
-        print("[info]: finish writingcd ",output_path)
+        if debug:
+            print("[info]: finish writingcd ",output_path)
     if debug and im_show_cb:
         im_show_cb("result",img_ori)
 
-if __name__ == "__main__":
 
+def main(isdebug = False):
+    debug = isdebug
     use_mpi_model = False
     import sys,cv2,os,argparse,copy
     from img2keypoint_using_ai import parse_heatpaf
@@ -420,14 +468,16 @@ if __name__ == "__main__":
         model.init_params(arg_params=newargs, aux_params={}, allow_missing=False)
         return model
     cmodel = getModel(save_prefix,start_epoch)
-    for x,y,z in os.walk("/data1/yks/dataset/ai_challenger/ai_challenger_keypoint_validation_20170911/keypoint_validation_images_20170911"):
+    # for x,y,z in os.walk("/data1/yks/dataset/ai_challenger/ai_challenger_keypoint_validation_20170911/keypoint_validation_images_20170911"):
+    for x,y,z in os.walk("../../eval_dataset/images/"):
         for name in z:
             img_path = os.path.join(x,name)
             pprint(img_path)
             img_path,oriImg,heatmap_avg,paf_avg = getHeatAndPAF(img_path,[cmodel])
 #             imshow("heatmap_avg",np.float32( heatmap_avg[:,:,14]))
 #             imshow("oriImg",oriImg)
-            parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,"/tmp/tmp.json",im_show_cb = imshow)
+
+            parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,"../outputs/val3/",im_show_cb = imshow)
       
 #             for i in range(heatmap_avg.shape[2]):
 #                 imshow("heatmap_{0}".format(i),heatmap_avg[:,:,i] )
@@ -441,3 +491,5 @@ if __name__ == "__main__":
 
         
 
+if __name__ == "__main__":
+    main()
