@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 import sys,os,pickle
 part2ours = [9,8,7,10,11,12,-1,14,-1,13,3,2,1,4,5,6]
-
+img_train_size = 368
 
 # In[125]:
 
@@ -81,13 +81,13 @@ def generateLabelMap(oneimg):
     stride = 8
     grid_x = augmentcols / stride
     grid_y = augmentrows / stride
-    sigma = 4.0
+    sigma = 26.0
     #sigma = 10.0
     #sigma = 26.0
     
     heat_map = list()
     for i in range(numofparts+1):
-        heat_map.append(np.zeros((crop_size_width / stride, crop_size_height / stride)))
+        heat_map.append(np.zeros((img_train_size, img_train_size)))
 
 
     for one_rect in oneimg['annoations']:
@@ -95,23 +95,26 @@ def generateLabelMap(oneimg):
             x,y,part_id,isVisible = onePoint
             x *= fscale
             y *= fscale
+            x = int(x)
+            y = int(y)
             part_id = part2ours[part_id]-1
             if part_id <= -1:
                 continue
-            putGaussianMaps(heat_map[part_id], 368, 368, 
-                            x,y,
-                            stride, grid_x, grid_y, sigma)
+            cv2.circle(heat_map[part_id],(x,y),8,(1,1,1),-1,8)
+            # putGaussianMaps(heat_map[part_id], 368, 368, 
+            #                 x,y,
+            #                 stride, grid_x, grid_y, sigma)
        
     ### put background channel
     #heat_map[numofparts] = heat_map[0]
-    
-    for g_y in range(grid_y):
-        for g_x in range(grid_x):
-            maximum=0
-            for i in range(numofparts):
-                if maximum<heat_map[i][g_y, g_x]:
-                    maximum = heat_map[i][g_y, g_x]
-            heat_map[numofparts][g_y,g_x]=max(1.0-maximum,0.0)
+    heat_map[numofparts] = np.max(heat_map[:-1],axis=0)
+    # for g_y in range(heat_map[0].shape[0]):
+    #     for g_x in range(heat_map[0].shape[1]):
+    #         maximum=0
+    #         for i in range(numofparts):
+    #             if maximum<heat_map[i][g_y, g_x]:
+    #                 maximum = heat_map[i][g_y, g_x]
+    #         heat_map[numofparts][g_y,g_x]=max(maximum,0.0)
     
 
     mid_1 = [13,14,14,1, 2, 4, 5, 1, 7, 8, 4, 10, 11]
@@ -131,12 +134,13 @@ def generateLabelMap(oneimg):
                        one_person[mid_1[i]-1][0], one_person[mid_1[i]-1][1], 
                        one_person[mid_2[i]-1][0], one_person[mid_2[i]-1][1],
                        stride, 46, 46, sigma, thre)
-                            
+    for i in range(len(heat_map)):
+        heat_map[i]= cv2.resize(heat_map[i],(46,46),interpolation=cv2.INTER_NEAREST)
     return img_pad,heat_map, pag_map,genMask(oneimg,fscale).astype(np.float32)
 
 
 # In[128]:
-def convertdataset2sqlite(filename = "mpi_inf.db",maxcount = 999999999):
+def convertdataset2sqlite(filename = "mpi_inf_v1.db",maxcount = 9999999999):
     import sqlite3,json,cv2
     conn= sqlite3.connect(filename)
     cursor = conn.cursor()

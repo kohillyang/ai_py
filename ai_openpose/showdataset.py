@@ -132,6 +132,7 @@ class Ai_data_set(object):
         self.cursor = self.conn.cursor()        
         self.cursor.execute(' SELECT COUNT(*) FROM DB0 ')
         self.count = int(self.cursor.fetchone()[0])
+        print("info: dataset count",self.count)
     def __iter__(self):
         self.cur_batch = 0
         self.cursor.close()
@@ -139,13 +140,14 @@ class Ai_data_set(object):
         return self
     def __next__(self):
         r = []
-        self.cursor.execute(' SELECT * FROM DB0 limit {0} OFFSET {1}'.format(self.batchsize,randint(0,self.count - 1 - self.batchsize)))
         transposeImage_batch = []
         heatmap_batch = []
         pagmap_batch = []
         heatweight_batch = []
         vecweight_batch = []
-        for row in self.cursor:
+        for _ in range(self.batchsize):
+            self.cursor.execute(' SELECT * FROM DB0 limit {0} OFFSET {1}'.format(1,randint(0,self.count - 2)))
+            row = self.cursor.fetchone()
             data  = row[1]
             r.append(pickle.loads(str(data)))            
             image, mask, heatmap, pagmap = pickle.loads(str(data))

@@ -13,7 +13,7 @@ import numpy as np
 # sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
 from modelCPMWeight import CPMModel,numofparts,numoflinks
 save_prefix  = "../outputs/models/yks_pose"
-def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [1,2,3,4]):
+def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [4,5,6,7]):
     if re_init:
         from train_config import vggparams,params_realtimePose_layers
         vgg19_prefix = "/data1/yks/models/vgg19/vgg19"
@@ -28,8 +28,8 @@ def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = 
             newargs[key_weight] = arg_mpi[key_weight]
             newargs[key_bias] = arg_mpi[key_bias]
 
-        for key in vggparams:
-            newargs[key] = arg_vgg[key]
+        # for key in vggparams:
+        #     newargs[key] = arg_vgg[key]
         sym = CPMModel()
     else:
         sym, newargs, _ = mx.model.load_checkpoint(prefix, begin_epoch)
@@ -123,11 +123,11 @@ def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_
                 
 if __name__ == "__main__":
 
-    start_epoch = 0
-    batch_size = 16
-    cpm_model = getModule(save_prefix,start_epoch,batch_size,True)
-    train_data = Ai_data_set(batch_size,"mpi_1000.db")
-    train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,4)
+    start_epoch = 4450
+    batch_size = 32
+    cpm_model = getModule(save_prefix,start_epoch,batch_size,False)
+    train_data = Ai_data_set(batch_size,"mpi_inf_v1.db")
+    train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,10)
 
 
 
