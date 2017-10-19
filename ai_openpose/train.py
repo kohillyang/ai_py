@@ -12,9 +12,10 @@ import numpy as np
 
 # sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
 from modelCPMWeight import CPMModel,numofparts,numoflinks
-save_prefix  = "../outputs/models/yks_pose"
-def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [4,5,6,7]):
-    if re_init:
+save_prefix  = "../outputs/models/yks_resnet_pose"
+def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [4,5,6,7],use_resnet = True):
+
+    if re_init and not use_resnet:
         from train_config import vggparams,params_realtimePose_layers
         vgg19_prefix = "/data1/yks/models/vgg19/vgg19"
         mpi_prefix = "/data1/yks/models/openpose/realtimePose_mpi"
@@ -31,6 +32,12 @@ def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = 
         # for key in vggparams:
         #     newargs[key] = arg_vgg[key]
         sym = CPMModel()
+    elif re_init and use_resnet:
+        sym = CPMModel()
+        _,newargs,_ = mx.model.load_checkpoint("/data1/yks/models/resnet/resnet-152", 0)
+        #newargs = {}
+#         for key in resnet_arg.keys():
+#             print key
     else:
         sym, newargs, _ = mx.model.load_checkpoint(prefix, begin_epoch)
         
@@ -45,11 +52,11 @@ def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = 
                     ('partaffinityglabel', (batch_size, numoflinks * 2, 46, 46)),
                     ('heatweight', (batch_size, numofparts, 46, 46)),
                     ('vecweight', (batch_size, numoflinks * 2, 46, 46))])
-    model.init_params(arg_params=newargs, aux_params={}, allow_missing=True)
+    model.init_params(arg_params=newargs, aux_params={}, allow_missing=True,allow_extra = True)
 
     return model
 def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_train_count = 4):
-    cmodel.init_optimizer(optimizer='sgd', optimizer_params=(('learning_rate', 1e-5 ), ))         
+    cmodel.init_optimizer(optimizer='sgd', optimizer_params=(('learning_rate', 1e-3 ), ))         
     for nbatch,data_batch in enumerate(train_data):
         current_batch = begin_epoch + nbatch 
         if current_batch >= end_epoch:
@@ -123,9 +130,9 @@ def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_
                 
 if __name__ == "__main__":
 
-    start_epoch = 5900
+    start_epoch = 0
     batch_size = 32
-    cpm_model = getModule(save_prefix,start_epoch,batch_size,False)
+    cpm_model = getModule(save_prefix,start_epoch,batch_size,True)
     train_data = Ai_data_set(batch_size,"mpi_inf_v2.db")
     train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,10)
 
