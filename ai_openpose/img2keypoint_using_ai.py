@@ -11,8 +11,8 @@ import cv2
 import numpy as np
 import scipy
 import PIL.Image
-# sys.path.append("pysrc")
-# import pydevd
+sys.path.append("pysrc")
+import pydevd
 
 
 from train import numoflinks,numofparts,save_prefix
@@ -32,7 +32,7 @@ def showjson(json_path):
         return
     img = cv2.imread(ob['path'])
     for key in ob.keys():
-        if isinstance(ob[key],list) and len(ob[key]) == 30:
+        if isinstance(ob[key],list) and len(ob[key]) == 28:
             for i in range(14):
                 f_scale = 1.0/ max_img_shape[0] *max(img.shape[0],img.shape[1])
                 x = int(ob[key][i * 2] * f_scale)
@@ -131,8 +131,8 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
         x_list = []
         y_list = []
         map_ori = heatmap_avg[:,:,part]
-#         map = gaussian_filter(map_ori, sigma=3)
-        map = map_ori
+        map = gaussian_filter(map_ori, sigma=3)
+        #map = map_ori
         map_left = np.zeros(map.shape)
         map_left[1:,:] = map[:-1,:]
         map_right = np.zeros(map.shape)
@@ -161,8 +161,8 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
     special_k = []
     special_non_zero_index = []
     mid_num = param['mid_num'] 
-    if debug:
-        pydevd.settrace("115.154.62.162", True, True, 5678, True) 
+#     if debug:
+#     pydevd.settrace("127.0.0.1", True, True, 5678, True) 
     for k in range(len(mapIdx)):
         score_mid = paf_avg[:,:,[x for x in mapIdx[k]]]
         candA = all_peaks[limbSeq[k][0]-1]
@@ -428,10 +428,7 @@ def main(isdebug = False,start_epoch = 5900):
         if use_mpi_model:
             sym = sym_load
         model = mx.mod.Module(symbol=sym, context=[mx.gpu(x) for x in gpus],                        
-                              label_names=['heatmaplabel',
-                                    'partaffinityglabel',
-                                    'heatweight',
-                                    'vecweight'])
+                              label_names=None)
         model.bind(data_shapes=[('data', (batch_size, 3, max_img_shape[0], max_img_shape[1]))],for_training = False)
         model.init_params(arg_params=newargs, aux_params={}, allow_missing=False)
         return model

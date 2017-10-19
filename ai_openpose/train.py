@@ -123,10 +123,10 @@ def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_
                 
 if __name__ == "__main__":
 
-    start_epoch = 4450
+    start_epoch = 5900
     batch_size = 32
     cpm_model = getModule(save_prefix,start_epoch,batch_size,False)
-    train_data = Ai_data_set(batch_size,"mpi_inf_v1.db")
+    train_data = Ai_data_set(batch_size,"mpi_inf_v2.db")
     train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,10)
 
 
