@@ -194,8 +194,10 @@ def get_resnet_openpose_sym():
 #     mx.viz.plot_network(sym_resnet,shape = {"data":(1,3,368,368)}).view()
     return sym_resnet
     
-    
-    
+if __name__ == "__main__":
+    sym,_,_ = mx.model.load_checkpoint("/data1/yks/models/resnet/resnet-152", 0)
+    mx.viz.plot_network(sym,shape = {"data":(1,3,368,368)},title = "load").view()    
+    mx.viz.plot_network(get_resnet_openpose_sym(),shape = {"data":(1,3,368,368)}).view()
     
     
     

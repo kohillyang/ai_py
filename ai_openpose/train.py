@@ -13,7 +13,7 @@ import numpy as np
 # sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
 from modelCPMWeight import CPMModel,numofparts,numoflinks
 save_prefix  = "../outputs/models/yks_resnet_pose"
-def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [4,5,6,7],use_resnet = True):
+def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [6,7],use_resnet = False):
 
     if re_init and not use_resnet:
         from train_config import vggparams,params_realtimePose_layers
@@ -130,10 +130,10 @@ def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_
                 
 if __name__ == "__main__":
 
-    start_epoch = 0
-    batch_size = 32
-    cpm_model = getModule(save_prefix,start_epoch,batch_size,True)
-    train_data = Ai_data_set(batch_size,"mpi_inf_v2.db")
+    start_epoch = 450
+    batch_size = 16
+    cpm_model = getModule(save_prefix,start_epoch,batch_size,False,use_resnet = True)
+    train_data = Ai_data_set(batch_size,"ai_inf_v1.db")
     train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,10)
 
 

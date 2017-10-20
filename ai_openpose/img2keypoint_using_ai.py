@@ -46,7 +46,7 @@ def showjson(json_path):
         exit(0)
 search_ratio = [1]
 imgshape_bind = [(int(368*x),int(368*x)) for x in search_ratio]
-max_img_shape = (max(search_ratio)*368,max(search_ratio)*368)
+max_img_shape = (int(max(search_ratio)*368),int(max(search_ratio)*368))
 import json
 def padimg(img,destsize):
     s = img.shape
@@ -74,6 +74,8 @@ def parseOneJson(json_path):
 
     img = cv2.imread(ob['path'])    
     keypoint_annotations = {}
+
+    human_count = 0
     for key in ob.keys():
         if isinstance(ob[key],list) and len(ob[key]) == (2 * (numofparts-1)):
             keypoint = [0] * 42
@@ -93,8 +95,10 @@ def parseOneJson(json_path):
                     v = 0
                 keypoint[map_index *3 + 0] = x
                 keypoint[map_index *3 + 1] = y
-                keypoint[map_index *3 + 2] = v                                            
-            keypoint_annotations['human{0}'.format(i)] = keypoint
+                keypoint[map_index *3 + 2] = v      
+            human_count += 1 
+            print(human_count,ob['path'])                                     
+            keypoint_annotations['human{0}'.format(human_count)] = keypoint
     r_dict['keypoint_annotations'] = keypoint_annotations
 
     return r_dict
@@ -367,8 +371,7 @@ def main(isdebug = False,start_epoch = 5900):
         fig = plt.gcf();fig.set_size_inches(8, 8);plt.title(x); plt.imshow(y);plt.show()
     import mxnet as mx
     import numpy as np
-    max_img_shape = (368 ,368)
-    imgshape_bind = (max_img_shape,)
+
     def padimg(img,destsize):
         s = img.shape    
         if(s[0] > s[1]):
@@ -432,7 +435,7 @@ def main(isdebug = False,start_epoch = 5900):
         model.bind(data_shapes=[('data', (batch_size, 3, max_img_shape[0], max_img_shape[1]))],for_training = False)
         model.init_params(arg_params=newargs, aux_params={}, allow_missing=False)
         return model
-    cmodel = getModel(save_prefix,start_epoch)
+    cmodel = getModel("../outputs/models/yks_pose",start_epoch)
     # for x,y,z in os.walk("/data1/yks/dataset/ai_challenger/ai_challenger_keypoint_validation_20170911/keypoint_validation_images_20170911"):
     for x,y,z in os.walk("../../eval_dataset/images/"):
         for name in z:

@@ -9,7 +9,7 @@ import resnet
 numofparts = 15
 numoflinks = 13
 
-def CPMModel():
+def CPMModel(use_resnet = False):
     data = mx.symbol.Variable(name='data')
     ## heat map of human parts
     heatmaplabel = mx.sym.Variable("heatmaplabel")
@@ -19,36 +19,37 @@ def CPMModel():
     heatweight = mx.sym.Variable('heatweight')
     
     vecweight = mx.sym.Variable('vecweight')
-
-    sym_resnet = resnet.sym.get_resnet_openpose_sym()
-    relu4_4_CPM = sym_resnet(name = "resnet",data = data)
-#     conv1_1 = mx.symbol.Convolution(name='conv1_1', data=data , num_filter=64, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu1_1 = mx.symbol.Activation(name='relu1_1', data=conv1_1 , act_type='relu')
-#     conv1_2 = mx.symbol.Convolution(name='conv1_2', data=relu1_1 , num_filter=64, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu1_2 = mx.symbol.Activation(name='relu1_2', data=conv1_2 , act_type='relu')
-#     pool1_stage1 = mx.symbol.Pooling(name='pool1_stage1', data=relu1_2 , pooling_convention='full', pad=(0,0), kernel=(2,2), stride=(2,2), pool_type='max')
-#     conv2_1 = mx.symbol.Convolution(name='conv2_1', data=pool1_stage1 , num_filter=128, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu2_1 = mx.symbol.Activation(name='relu2_1', data=conv2_1 , act_type='relu')
-#     conv2_2 = mx.symbol.Convolution(name='conv2_2', data=relu2_1 , num_filter=128, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu2_2 = mx.symbol.Activation(name='relu2_2', data=conv2_2 , act_type='relu')
-#     pool2_stage1 = mx.symbol.Pooling(name='pool2_stage1', data=relu2_2 , pooling_convention='full', pad=(0,0), kernel=(2,2), stride=(2,2), pool_type='max')
-#     conv3_1 = mx.symbol.Convolution(name='conv3_1', data=pool2_stage1 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu3_1 = mx.symbol.Activation(name='relu3_1', data=conv3_1 , act_type='relu')
-#     conv3_2 = mx.symbol.Convolution(name='conv3_2', data=relu3_1 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu3_2 = mx.symbol.Activation(name='relu3_2', data=conv3_2 , act_type='relu')
-#     conv3_3 = mx.symbol.Convolution(name='conv3_3', data=relu3_2 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu3_3 = mx.symbol.Activation(name='relu3_3', data=conv3_3 , act_type='relu')
-#     conv3_4 = mx.symbol.Convolution(name='conv3_4', data=relu3_3 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu3_4 = mx.symbol.Activation(name='relu3_4', data=conv3_4 , act_type='relu')
-#     pool3_stage1 = mx.symbol.Pooling(name='pool3_stage1', data=relu3_4 , pooling_convention='full', pad=(0,0), kernel=(2,2), stride=(2,2), pool_type='max')
-#     conv4_1 = mx.symbol.Convolution(name='conv4_1', data=pool3_stage1 , num_filter=512, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu4_1 = mx.symbol.Activation(name='relu4_1', data=conv4_1 , act_type='relu')
-#     conv4_2 = mx.symbol.Convolution(name='conv4_2', data=relu4_1 , num_filter=512, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu4_2 = mx.symbol.Activation(name='relu4_2', data=conv4_2 , act_type='relu')
-#     conv4_3_CPM = mx.symbol.Convolution(name='conv4_3_CPM', data=relu4_2 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu4_3_CPM = mx.symbol.Activation(name='relu4_3_CPM', data=conv4_3_CPM , act_type='relu')
-#     conv4_4_CPM = mx.symbol.Convolution(name='conv4_4_CPM', data=relu4_3_CPM , num_filter=128, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
-#     relu4_4_CPM = mx.symbol.Activation(name='relu4_4_CPM', data=conv4_4_CPM , act_type='relu')
+    if use_resnet:
+        sym_resnet = resnet.sym.get_resnet_openpose_sym()
+        relu4_4_CPM = sym_resnet(name = "resnet",data = data)
+    else:
+        conv1_1 = mx.symbol.Convolution(name='conv1_1', data=data , num_filter=64, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu1_1 = mx.symbol.Activation(name='relu1_1', data=conv1_1 , act_type='relu')
+        conv1_2 = mx.symbol.Convolution(name='conv1_2', data=relu1_1 , num_filter=64, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu1_2 = mx.symbol.Activation(name='relu1_2', data=conv1_2 , act_type='relu')
+        pool1_stage1 = mx.symbol.Pooling(name='pool1_stage1', data=relu1_2 , pooling_convention='full', pad=(0,0), kernel=(2,2), stride=(2,2), pool_type='max')
+        conv2_1 = mx.symbol.Convolution(name='conv2_1', data=pool1_stage1 , num_filter=128, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu2_1 = mx.symbol.Activation(name='relu2_1', data=conv2_1 , act_type='relu')
+        conv2_2 = mx.symbol.Convolution(name='conv2_2', data=relu2_1 , num_filter=128, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu2_2 = mx.symbol.Activation(name='relu2_2', data=conv2_2 , act_type='relu')
+        pool2_stage1 = mx.symbol.Pooling(name='pool2_stage1', data=relu2_2 , pooling_convention='full', pad=(0,0), kernel=(2,2), stride=(2,2), pool_type='max')
+        conv3_1 = mx.symbol.Convolution(name='conv3_1', data=pool2_stage1 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu3_1 = mx.symbol.Activation(name='relu3_1', data=conv3_1 , act_type='relu')
+        conv3_2 = mx.symbol.Convolution(name='conv3_2', data=relu3_1 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu3_2 = mx.symbol.Activation(name='relu3_2', data=conv3_2 , act_type='relu')
+        conv3_3 = mx.symbol.Convolution(name='conv3_3', data=relu3_2 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu3_3 = mx.symbol.Activation(name='relu3_3', data=conv3_3 , act_type='relu')
+        conv3_4 = mx.symbol.Convolution(name='conv3_4', data=relu3_3 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu3_4 = mx.symbol.Activation(name='relu3_4', data=conv3_4 , act_type='relu')
+        pool3_stage1 = mx.symbol.Pooling(name='pool3_stage1', data=relu3_4 , pooling_convention='full', pad=(0,0), kernel=(2,2), stride=(2,2), pool_type='max')
+        conv4_1 = mx.symbol.Convolution(name='conv4_1', data=pool3_stage1 , num_filter=512, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu4_1 = mx.symbol.Activation(name='relu4_1', data=conv4_1 , act_type='relu')
+        conv4_2 = mx.symbol.Convolution(name='conv4_2', data=relu4_1 , num_filter=512, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu4_2 = mx.symbol.Activation(name='relu4_2', data=conv4_2 , act_type='relu')
+        conv4_3_CPM = mx.symbol.Convolution(name='conv4_3_CPM', data=relu4_2 , num_filter=256, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu4_3_CPM = mx.symbol.Activation(name='relu4_3_CPM', data=conv4_3_CPM , act_type='relu')
+        conv4_4_CPM = mx.symbol.Convolution(name='conv4_4_CPM', data=relu4_3_CPM , num_filter=128, pad=(1,1), kernel=(3,3), stride=(1,1), no_bias=False)
+        relu4_4_CPM = mx.symbol.Activation(name='relu4_4_CPM', data=conv4_4_CPM , act_type='relu')
     
     
     
