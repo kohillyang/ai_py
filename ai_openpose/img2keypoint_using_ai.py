@@ -352,19 +352,12 @@ def parse_heatpaf(img_path,oriImg,heatmap_avg,paf_avg,output_json_prefix,im_show
 
 def main(isdebug = False,start_epoch = 5900):
     debug = isdebug
-    use_mpi_model = False
     import sys,cv2,os,argparse,copy
     from img2keypoint_using_ai import parse_heatpaf
     from pprint import pprint
     sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
     from modelCPMWeight import CPMModel_test
-    if not use_mpi_model:
-        from train import numoflinks,numofparts,save_prefix
-    else:
-        save_prefix = "../../models/openpose/realtimePose_mpi"
-        start_epoch=0
-        numofparts = 16
-        numoflinks = 28
+    from train import numoflinks,numofparts,save_prefix
     import matplotlib.pyplot as plt
     #%matplotlib inline
     def imshow(x,y):
@@ -425,17 +418,23 @@ def main(isdebug = False,start_epoch = 5900):
     
         return img_path,oriImg,heatmap_avg,paf_avg
     def getModel(prefix,epoch,gpus = [0]):
-        sym  = CPMModel_test()
+        print(prefix)
+        sym  = CPMModel_test(True)
+
+        # mx.viz.plot_network(sym,shape = {"data":(1,3,368,368)}).view()
         batch_size = 1
-        sym_load, newargs, _ = mx.model.load_checkpoint(prefix, epoch)
-        if use_mpi_model:
-            sym = sym_load
+        sym_load, newargs,aux_args = mx.model.load_checkpoint(prefix, epoch)
+        print(set(sym.list_arguments()) - set(sym_load.list_arguments()))
+        print(set(sym.list_arguments()) - set(newargs.keys()))
+
+        # mx.viz.plot_network(sym_load,title = "sym_load").view()
+
         model = mx.mod.Module(symbol=sym, context=[mx.gpu(x) for x in gpus],                        
                               label_names=None)
-        model.bind(data_shapes=[('data', (batch_size, 3, max_img_shape[0], max_img_shape[1]))],for_training = False)
-        model.init_params(arg_params=newargs, aux_params={}, allow_missing=False)
+        model.bind(data_shapes=[('data', (batch_size, 3, max_img_shape[0], max_img_shape[1]))],for_training = True)
+        model.init_params(arg_params=newargs, aux_params=aux_args, allow_missing=False,allow_extra=False)
         return model
-    cmodel = getModel("../outputs/models/yks_pose",start_epoch)
+    cmodel = getModel(save_prefix,start_epoch)
     # for x,y,z in os.walk("/data1/yks/dataset/ai_challenger/ai_challenger_keypoint_validation_20170911/keypoint_validation_images_20170911"):
     for x,y,z in os.walk("../../eval_dataset/images/"):
         for name in z:

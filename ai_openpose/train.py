@@ -13,34 +13,29 @@ import numpy as np
 # sys.path.append("/data1/yks/mxnet_ai/mxnet_pose_for_AI_challenger")
 from modelCPMWeight import CPMModel,numofparts,numoflinks
 save_prefix  = "../outputs/models/yks_resnet_pose"
-def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [6,7],use_resnet = False):
+def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = [4,5,6,7],use_resnet = True):
 
-    if re_init and not use_resnet:
-        from train_config import vggparams,params_realtimePose_layers
-        vgg19_prefix = "/data1/yks/models/vgg19/vgg19"
-        mpi_prefix = "/data1/yks/models/openpose/realtimePose_mpi"
-        # coco_prefix = "/data1/yks/models/openpose/realtimePose"
-        sym_vgg, arg_vgg, aux_vgg = mx.model.load_checkpoint(vgg19_prefix, 0)
-        sym_mpi, arg_mpi, aux_mpi = mx.model.load_checkpoint(mpi_prefix, 0)
+    if re_init:
+        print("reinit")
+        sym = CPMModel(use_resnet = True)
+        # batch_size = 2
+        # mx.viz.plot_network(sym,shape = {"data":(1,3,368,368),        
+        #             'heatmaplabel':(batch_size, numofparts, 46, 46),
+        #             'partaffinityglabel':(batch_size, numoflinks * 2, 46, 46),
+        #             'heatweight':(batch_size, numofparts, 46, 46),
+        #             'vecweight':(batch_size, numoflinks * 2, 46, 46)
+                
+        # },title="plot",hide_weights=False).view()   
+        sym_resnet,args_resnet,_ = mx.model.load_checkpoint("/data1/yks/models/resnet/resnet-152", 0)
+        from train_config import resnet_keys
         newargs = {}
-        for key in params_realtimePose_layers:
-            key_weight = key + "_weight"
-            key_bias = key + "_bias"
-            newargs[key_weight] = arg_mpi[key_weight]
-            newargs[key_bias] = arg_mpi[key_bias]
-
-        # for key in vggparams:
-        #     newargs[key] = arg_vgg[key]
-        sym = CPMModel()
-    elif re_init and use_resnet:
-        sym = CPMModel()
-        _,newargs,_ = mx.model.load_checkpoint("/data1/yks/models/resnet/resnet-152", 0)
-        #newargs = {}
-#         for key in resnet_arg.keys():
-#             print key
+        aux_resnet = {}
+        for key in resnet_keys:
+            newargs[key] = args_resnet[key]
     else:
-        sym, newargs, _ = mx.model.load_checkpoint(prefix, begin_epoch)
-        
+        sym,newargs,aux_resnet = mx.model.load_checkpoint(prefix, begin_epoch)
+
+        pass
     model = mx.mod.Module(symbol=sym, context=[mx.gpu(x) for x in gpus],
                         label_names=['heatmaplabel',
                                 'partaffinityglabel',
@@ -52,7 +47,7 @@ def getModule(prefix=None , begin_epoch=0, batch_size=10,re_init = False,gpus = 
                     ('partaffinityglabel', (batch_size, numoflinks * 2, 46, 46)),
                     ('heatweight', (batch_size, numofparts, 46, 46)),
                     ('vecweight', (batch_size, numoflinks * 2, 46, 46))])
-    model.init_params(arg_params=newargs, aux_params={}, allow_missing=True,allow_extra = True)
+    model.init_params(arg_params=newargs, aux_params=aux_resnet, allow_missing=True,allow_extra = True)
 
     return model
 def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_train_count = 4):
@@ -130,11 +125,11 @@ def train(cmodel,train_data,begin_epoch,end_epoch,batch_size,save_prefix,single_
                 
 if __name__ == "__main__":
 
-    start_epoch = 450
-    batch_size = 16
+    start_epoch = 650
+    batch_size = 80
     cpm_model = getModule(save_prefix,start_epoch,batch_size,False,use_resnet = True)
-    train_data = Ai_data_set(batch_size,"ai_inf_v1.db")
-    train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,10)
+    train_data = Ai_data_set(batch_size,"mpi_inf_v2.db")
+    train(cpm_model,train_data,start_epoch,9999,batch_size,save_prefix,1)
 
 
 

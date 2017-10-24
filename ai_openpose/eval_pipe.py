@@ -38,7 +38,7 @@ def mergejson(input_dir):
 
 def eval_model():
     import img2keypoint_using_ai
-    img2keypoint_using_ai.main(start_epoch = 8600)
+    img2keypoint_using_ai.main(start_epoch = 3400)
     with open("../outputs/val3.json","wb") as f:
         json.dump(mergejson("../outputs/val3/"),f)
     import keypoint_eval
