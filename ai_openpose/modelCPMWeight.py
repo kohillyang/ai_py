@@ -2,17 +2,21 @@
 #from caffe.proto import caffe_pb2
 #use_caffe = True
 import re
-from google.protobuf import text_format
+# from google.protobuf import text_format
 import mxnet as mx
-from generateLabelCPMWeight import *
+# from generateLabelCPMWeight import *
 import resnet
 numofparts = 15
 numoflinks = 13
-
+def sfa(sym):
+#     return mx.symbol.Activation(data = sym,act_type = "sigmoid")
+    return sym
+# sfa = mx.symbol.SoftmaxActivation
 def CPMModel(use_resnet = False):
     data = mx.symbol.Variable(name='data')
     ## heat map of human parts
     heatmaplabel = mx.sym.Variable("heatmaplabel")
+    
     ## part affinity graph
     partaffinityglabel = mx.sym.Variable('partaffinityglabel')
 
@@ -207,88 +211,103 @@ def CPMModel(use_resnet = False):
     Mconv7_stage6_L1 = mx.symbol.Convolution(name='Mconv7_stage6_L1', data=Mrelu6_stage6_L1 , num_filter=numoflinks*2, pad=(0,0), kernel=(1,1), stride=(1,1), no_bias=False)
     Mconv7_stage6_L2 = mx.symbol.Convolution(name='Mconv7_stage6_L2', data=Mrelu6_stage6_L2 , num_filter=numofparts, pad=(0,0), kernel=(1,1), stride=(1,1), no_bias=False)
 
-    conv5_5_CPM_L1r = mx.symbol.Reshape(data=conv5_5_CPM_L1, shape=(-1,), name='conv5_5_CPM_L1r')
-    partaffinityglabelr = mx.symbol.Reshape(data=partaffinityglabel, shape=(-1, ), name='partaffinityglabelr')
-    stage1_loss_L1s = mx.symbol.square(conv5_5_CPM_L1r-partaffinityglabelr)
+    conv5_5_CPM_L1 = sfa(conv5_5_CPM_L1)
+    conv5_5_CPM_L2 = sfa(conv5_5_CPM_L2)
+    Mconv7_stage2_L1 = sfa(Mconv7_stage2_L1)
+    Mconv7_stage2_L2 = sfa(Mconv7_stage2_L2)
+    Mconv7_stage3_L1 = sfa(Mconv7_stage3_L1)
+    Mconv7_stage3_L2 = sfa(Mconv7_stage3_L2)
+    Mconv7_stage4_L1 = sfa(Mconv7_stage4_L1)
+    Mconv7_stage4_L2 = sfa(Mconv7_stage4_L2)
+    Mconv7_stage5_L1 = sfa(Mconv7_stage5_L1)
+    Mconv7_stage5_L2 = sfa(Mconv7_stage5_L2)
+    Mconv7_stage6_L1 = sfa(Mconv7_stage6_L1)
+    Mconv7_stage6_L2 = sfa(Mconv7_stage6_L2)
+    partaffinityglabel = sfa(partaffinityglabel)
+    heatmaplabel  = sfa(heatmaplabel)
+
+    conv5_5_CPM_L1r = (mx.symbol.Reshape(data=conv5_5_CPM_L1, shape=(-1,), name='conv5_5_CPM_L1r'))
+    partaffinityglabelr = (mx.symbol.Reshape(data=partaffinityglabel, shape=(-1, ), name='partaffinityglabelr'))
+    stage1_loss_L1s = mx.symbol.square(conv5_5_CPM_L1r-(partaffinityglabelr))
     vecweightw = mx.symbol.Reshape(data=vecweight, shape=(-1,), name='conv5_5_CPM_L1w')
     stage1_loss_L1w = stage1_loss_L1s*vecweightw
     stage1_loss_L1  = mx.symbol.MakeLoss(stage1_loss_L1w)
     
-    conv5_5_CPM_L2r = mx.symbol.Reshape(data=conv5_5_CPM_L2, shape=(-1,), name='conv5_5_CPM_L2r')
-    heatmaplabelr = mx.symbol.Reshape(data=heatmaplabel, shape=(-1, ), name='heatmaplabelr')
-    stage1_loss_L2s = mx.symbol.square(conv5_5_CPM_L2r-heatmaplabelr)
+    conv5_5_CPM_L2r = (mx.symbol.Reshape(data=conv5_5_CPM_L2, shape=(-1,), name='conv5_5_CPM_L2r'))
+    heatmaplabelr = (mx.symbol.Reshape(data=heatmaplabel, shape=(-1, ), name='heatmaplabelr'))
+    stage1_loss_L2s = mx.symbol.square(conv5_5_CPM_L2r-(heatmaplabelr))
     heatweightw = mx.symbol.Reshape(data=heatweight, shape=(-1,), name='conv5_5_CPM_L2w')
     stage1_loss_L2w = stage1_loss_L2s*heatweightw
     stage1_loss_L2  = mx.symbol.MakeLoss(stage1_loss_L2w)
         
-    Mconv7_stage2_L1r = mx.symbol.Reshape(data=Mconv7_stage2_L1, shape=(-1,), name='Mconv7_stage2_L1')
+    Mconv7_stage2_L1r = (mx.symbol.Reshape(data=Mconv7_stage2_L1, shape=(-1,), name='Mconv7_stage2_L1'))
     #partaffinityglabelr = mx.symbol.Reshape(data=partaffinityglabel, shape=(-1, ), name='partaffinityglabelr')
-    stage2_loss_L1s = mx.symbol.square(Mconv7_stage2_L1r - partaffinityglabelr)
+    stage2_loss_L1s = mx.symbol.square(Mconv7_stage2_L1r - (partaffinityglabelr))
     #vecweightw = mx.symbol.Reshape(data=vecweight, shape=(-1,), name='Mconv7_stage2_L1r')
     stage2_loss_L1w = stage2_loss_L1s*vecweightw
     stage2_loss_L1  = mx.symbol.MakeLoss(stage2_loss_L1w)
     
-    Mconv7_stage2_L2r = mx.symbol.Reshape(data=Mconv7_stage2_L2, shape=(-1,), name='Mconv7_stage2_L2')
+    Mconv7_stage2_L2r = (mx.symbol.Reshape(data=Mconv7_stage2_L2, shape=(-1,), name='Mconv7_stage2_L2'))
     #heatmaplabelr = mx.symbol.Reshape(data=heatmaplabel, shape=(-1, ), name='heatmaplabelr')
-    stage2_loss_L2s = mx.symbol.square(Mconv7_stage2_L2r-heatmaplabelr)
+    stage2_loss_L2s = mx.symbol.square(Mconv7_stage2_L2r-(heatmaplabelr))
     #heatweightw = mx.symbol.Reshape(data=heatweight, shape=(-1,), name='conv5_5_CPM_L1r')
     stage2_loss_L2w = stage1_loss_L2s*heatweightw
     stage2_loss_L2  = mx.symbol.MakeLoss(stage2_loss_L2w)
     
     
-    Mconv7_stage3_L1r = mx.symbol.Reshape(data=Mconv7_stage3_L1, shape=(-1,), name='Mconv7_stage3_L1')
+    Mconv7_stage3_L1r = (mx.symbol.Reshape(data=Mconv7_stage3_L1, shape=(-1,), name='Mconv7_stage3_L1'))
     #partaffinityglabelr = mx.symbol.Reshape(data=partaffinityglabel, shape=(-1, ), name='partaffinityglabelr')
-    stage3_loss_L1s = mx.symbol.square(Mconv7_stage3_L1r - partaffinityglabelr)
+    stage3_loss_L1s = mx.symbol.square(Mconv7_stage3_L1r - (partaffinityglabelr))
     #vecweightw = mx.symbol.Reshape(data=vecweight, shape=(-1,), name='Mconv7_stage2_L1r')
     stage3_loss_L1w = stage3_loss_L1s*vecweightw
     stage3_loss_L1  = mx.symbol.MakeLoss(stage3_loss_L1w)
     
-    Mconv7_stage3_L2r = mx.symbol.Reshape(data=Mconv7_stage3_L2, shape=(-1,), name='Mconv7_stage3_L2')
+    Mconv7_stage3_L2r = (mx.symbol.Reshape(data=Mconv7_stage3_L2, shape=(-1,), name='Mconv7_stage3_L2'))
     #heatmaplabelr = mx.symbol.Reshape(data=heatmaplabel, shape=(-1, ), name='heatmaplabelr')
-    stage3_loss_L2s = mx.symbol.square(Mconv7_stage3_L2r-heatmaplabelr)
+    stage3_loss_L2s = mx.symbol.square(Mconv7_stage3_L2r-(heatmaplabelr))
     #heatweightw = mx.symbol.Reshape(data=heatweight, shape=(-1,), name='conv5_5_CPM_L1r')
     stage3_loss_L2w = stage3_loss_L2s*heatweightw
     stage3_loss_L2  = mx.symbol.MakeLoss(stage3_loss_L2w)
     
-    Mconv7_stage4_L1r = mx.symbol.Reshape(data=Mconv7_stage4_L1, shape=(-1,), name='Mconv7_stage4_L1')
+    Mconv7_stage4_L1r = (mx.symbol.Reshape(data=Mconv7_stage4_L1, shape=(-1,), name='Mconv7_stage4_L1'))
     #partaffinityglabelr = mx.symbol.Reshape(data=partaffinityglabel, shape=(-1, ), name='partaffinityglabelr')
-    stage4_loss_L1s = mx.symbol.square(Mconv7_stage4_L1r - partaffinityglabelr)
+    stage4_loss_L1s = mx.symbol.square(Mconv7_stage4_L1r - (partaffinityglabelr))
     #vecweightw = mx.symbol.Reshape(data=vecweight, shape=(-1,), name='Mconv7_stage2_L1r')
     stage4_loss_L1w = stage4_loss_L1s*vecweightw
     stage4_loss_L1  = mx.symbol.MakeLoss(stage4_loss_L1w)
     
-    Mconv7_stage4_L2r = mx.symbol.Reshape(data=Mconv7_stage4_L2, shape=(-1,), name='Mconv7_stage4_L2')
+    Mconv7_stage4_L2r = (mx.symbol.Reshape(data=Mconv7_stage4_L2, shape=(-1,), name='Mconv7_stage4_L2'))
     #heatmaplabelr = mx.symbol.Reshape(data=heatmaplabel, shape=(-1, ), name='heatmaplabelr')
-    stage4_loss_L2s = mx.symbol.square(Mconv7_stage4_L2r-heatmaplabelr)
+    stage4_loss_L2s = mx.symbol.square(Mconv7_stage4_L2r-(heatmaplabelr))
     #heatweightw = mx.symbol.Reshape(data=heatweight, shape=(-1,), name='conv5_5_CPM_L1r')
     stage4_loss_L2w = stage1_loss_L2s*heatweightw
     stage4_loss_L2  = mx.symbol.MakeLoss(stage4_loss_L2w)
     
-    Mconv7_stage5_L1r = mx.symbol.Reshape(data=Mconv7_stage5_L1, shape=(-1,), name='Mconv7_stage5_L1')
+    Mconv7_stage5_L1r = (mx.symbol.Reshape(data=Mconv7_stage5_L1, shape=(-1,), name='Mconv7_stage5_L1'))
     #partaffinityglabelr = mx.symbol.Reshape(data=partaffinityglabel, shape=(-1, ), name='partaffinityglabelr')
-    stage5_loss_L1s = mx.symbol.square(Mconv7_stage5_L1r - partaffinityglabelr)
+    stage5_loss_L1s = mx.symbol.square(Mconv7_stage5_L1r - (partaffinityglabelr))
     #vecweightw = mx.symbol.Reshape(data=vecweight, shape=(-1,), name='Mconv7_stage2_L1r')
     stage5_loss_L1w = stage5_loss_L1s*vecweightw
     stage5_loss_L1  = mx.symbol.MakeLoss(stage5_loss_L1w)
     
-    Mconv7_stage5_L2r = mx.symbol.Reshape(data=Mconv7_stage5_L2, shape=(-1,), name='Mconv7_stage5_L2')
+    Mconv7_stage5_L2r = (mx.symbol.Reshape(data=Mconv7_stage5_L2, shape=(-1,), name='Mconv7_stage5_L2'))
     #heatmaplabelr = mx.symbol.Reshape(data=heatmaplabel, shape=(-1, ), name='heatmaplabelr')
-    stage5_loss_L2s = mx.symbol.square(Mconv7_stage5_L2r-heatmaplabelr)
+    stage5_loss_L2s = mx.symbol.square(Mconv7_stage5_L2r-(heatmaplabelr))
     #heatweightw = mx.symbol.Reshape(data=heatweight, shape=(-1,), name='conv5_5_CPM_L1r')
     stage5_loss_L2w = stage5_loss_L2s*heatweightw
     stage5_loss_L2  = mx.symbol.MakeLoss(stage5_loss_L2w)
     
     
-    Mconv7_stage6_L1r = mx.symbol.Reshape(data=Mconv7_stage6_L1, shape=(-1,), name='Mconv7_stage3_L1')
+    Mconv7_stage6_L1r = (mx.symbol.Reshape(data=Mconv7_stage6_L1, shape=(-1,), name='Mconv7_stage3_L1'))
     #partaffinityglabelr = mx.symbol.Reshape(data=partaffinityglabel, shape=(-1, ), name='partaffinityglabelr')
-    stage6_loss_L1s = mx.symbol.square(Mconv7_stage6_L1r - partaffinityglabelr)
+    stage6_loss_L1s = mx.symbol.square(Mconv7_stage6_L1r - (partaffinityglabelr))
     #vecweightw = mx.symbol.Reshape(data=vecweight, shape=(-1,), name='Mconv7_stage2_L1r')
     stage6_loss_L1w = stage6_loss_L1s*vecweightw
     stage6_loss_L1  = mx.symbol.MakeLoss(stage6_loss_L1w)
     
-    Mconv7_stage6_L2r = mx.symbol.Reshape(data=Mconv7_stage6_L2, shape=(-1,), name='Mconv7_stage3_L2')
+    Mconv7_stage6_L2r = (mx.symbol.Reshape(data=Mconv7_stage6_L2, shape=(-1,), name='Mconv7_stage3_L2'))
     #heatmaplabelr = mx.symbol.Reshape(data=heatmaplabel, shape=(-1, ), name='heatmaplabelr')
-    stage6_loss_L2s = mx.symbol.square(Mconv7_stage6_L2r-heatmaplabelr)
+    stage6_loss_L2s = mx.symbol.square(Mconv7_stage6_L2r- (heatmaplabelr))
     #heatweightw = mx.symbol.Reshape(data=heatweight, shape=(-1,), name='conv5_5_CPM_L1r')
     stage6_loss_L2w = stage6_loss_L2s*heatweightw
     stage6_loss_L2  = mx.symbol.MakeLoss(stage6_loss_L2w)
@@ -501,6 +520,19 @@ def CPMModel_test(use_resnet = False):
     Mrelu6_stage6_L2 = mx.symbol.Activation(name='Mrelu6_stage6_L2', data=Mconv6_stage6_L2 , act_type='relu')
     Mconv7_stage6_L1 = mx.symbol.Convolution(name='Mconv7_stage6_L1', data=Mrelu6_stage6_L1 , num_filter=numoflinks*2, pad=(0,0), kernel=(1,1), stride=(1,1), no_bias=False)
     Mconv7_stage6_L2 = mx.symbol.Convolution(name='Mconv7_stage6_L2', data=Mrelu6_stage6_L2 , num_filter=numofparts, pad=(0,0), kernel=(1,1), stride=(1,1), no_bias=False)
+
+    conv5_5_CPM_L1 = sfa(conv5_5_CPM_L1)
+    conv5_5_CPM_L2 = sfa(conv5_5_CPM_L2)
+    Mconv7_stage2_L1 = sfa(Mconv7_stage2_L1)
+    Mconv7_stage2_L2 = sfa(Mconv7_stage2_L2)
+    Mconv7_stage3_L1 = sfa(Mconv7_stage3_L1)
+    Mconv7_stage3_L2 = sfa(Mconv7_stage3_L2)
+    Mconv7_stage4_L1 = sfa(Mconv7_stage4_L1)
+    Mconv7_stage4_L2 = sfa(Mconv7_stage4_L2)
+    Mconv7_stage5_L1 = sfa(Mconv7_stage5_L1)
+    Mconv7_stage5_L2 = sfa(Mconv7_stage5_L2)
+    Mconv7_stage6_L1 = sfa(Mconv7_stage6_L1)
+    Mconv7_stage6_L2 = sfa(Mconv7_stage6_L2)
 
     
     group = mx.symbol.Group([conv5_5_CPM_L1, conv5_5_CPM_L2,

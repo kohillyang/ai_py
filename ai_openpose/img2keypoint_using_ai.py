@@ -409,7 +409,7 @@ def main(isdebug = False,start_epoch = 5900):
             result = model.get_outputs()
             max_shape = (oriImg.shape[0],oriImg.shape[1])
             heatmap = suffix_heatmap(result[1],max_shape)
-            paf =     suffix_paf(    result[0],max_shape)
+            paf =     suffix_paf(    result[-2],max_shape)
             return (heatmap,paf)
     
         imgs = preprocess(oriImg)
@@ -419,7 +419,7 @@ def main(isdebug = False,start_epoch = 5900):
         return img_path,oriImg,heatmap_avg,paf_avg
     def getModel(prefix,epoch,gpus = [0]):
         print(prefix)
-        sym  = CPMModel_test(True)
+        sym  = CPMModel_test(False)
 
         # mx.viz.plot_network(sym,shape = {"data":(1,3,368,368)}).view()
         batch_size = 1

@@ -16,6 +16,7 @@ def imshow(x,y):
     fig = plt.gcf();fig.set_size_inches(8, 8);plt.title(x); plt.imshow(y);plt.show()
 def genMask(human_annotations,fscale,img_path):
     img = cv2.imread(img_path)
+    
     mask = np.zeros(shape = (368,368),dtype = np.int32)
     for key in human_annotations.keys():
         x0,x1,y0,y1 = (np.array(human_annotations[key]).astype(np.float32) * fscale).astype(np.int32)
@@ -25,6 +26,7 @@ def genMask(human_annotations,fscale,img_path):
 def padimg(img,destsize):
     import cv2
     import numpy as np
+    
     s = img.shape
     if(s[0] > s[1]):
         img_d = cv2.resize(img,dsize = None,fx = 1.0 * destsize/s[0], fy = 1.0 * destsize/s[0])
