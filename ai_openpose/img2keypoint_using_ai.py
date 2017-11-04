@@ -408,7 +408,7 @@ def main(isdebug = False,start_epoch = 5900):
             model.forward(onedata)
             result = model.get_outputs()
             max_shape = (oriImg.shape[0],oriImg.shape[1])
-            heatmap = suffix_heatmap(result[1],max_shape)
+            heatmap = suffix_heatmap(result[-1],max_shape)
             paf =     suffix_paf(    result[-2],max_shape)
             return (heatmap,paf)
     
@@ -431,10 +431,11 @@ def main(isdebug = False,start_epoch = 5900):
 
         model = mx.mod.Module(symbol=sym, context=[mx.gpu(x) for x in gpus],                        
                               label_names=None)
-        model.bind(data_shapes=[('data', (batch_size, 3, max_img_shape[0], max_img_shape[1]))],for_training = True)
-        model.init_params(arg_params=newargs, aux_params=aux_args, allow_missing=False,allow_extra=False)
+        model.bind(data_shapes=[('data', (batch_size, 3, max_img_shape[0], max_img_shape[1]))],for_training = False)
+        model.init_params(arg_params=newargs, aux_params=aux_args, allow_missing=False,allow_extra=True)
         return model
-    cmodel = getModel(save_prefix,start_epoch)
+    cmodel = getModel("/home/kohill/mx-openpose/models/yks_pose",start_epoch)
+#     cmodel = getModel(save_prefix,start_epoch)
     # for x,y,z in os.walk("/data1/yks/dataset/ai_challenger/ai_challenger_keypoint_validation_20170911/keypoint_validation_images_20170911"):
     for x,y,z in os.walk("../../eval_dataset/images/"):
         for name in z:

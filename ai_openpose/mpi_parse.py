@@ -129,7 +129,8 @@ def generateLabelMap(oneimg):
     for one_rect in oneimg['annoations']:
         one_person = map2Ai(one_rect,fscale)
         for i in range(numoflinks):
-            putVecMaps(pag_map[2 * i], pag_map[2 * i + 1], count,
+            putVecMaps(pag_map[2 * i], pag_map[2 * i + 1], 
+                       count,
                        one_person[mid_1[i]-1][0], one_person[mid_1[i]-1][1], 
                        one_person[mid_2[i]-1][0], one_person[mid_2[i]-1][1],
                        stride, 46, 46, sigma, thre)
